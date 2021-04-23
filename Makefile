@@ -7,13 +7,13 @@ SYSTEM_ARCH := $(shell uname -m | sed -e 's/aarch64.*/arm64/' -e 's/x86_64.*/amd
 
 # BADM 48030
 export ARCH ?= amd64
-export PORT ?= 9081
+export PORT ?= 8088
 
 
 
 
 # These variables can be overridden from the environment
-export CHATBOT_NAME ?= chatbot
+export CHATBOT_NAME ?= lab2021
 export CHATBOT_VERSION ?= 1.0.1
 
 
@@ -47,33 +47,11 @@ check:
 stop:
 	-docker rm -f $(DOCKER_NAME) 2> /dev/null || :
 
-# Targets for using the hzn dev environment
-hznbuild: build
-	hzn dev service verify
-
-hznstart: hznbuild
-	hzn dev service start
-
-hznstop:
-	hzn dev service stop
 
 # Push the docker image to the registry. You must have write access to the docker hub openhorizon user
 docker-push: build
 	docker push $(DOCKER_HUB_ID)/$(DOCKER_NAME):$(CHATBOT_VERSION)
 	
-# Create/update the metadata in the exchange for this service
-publish-service: build publish-service-only
-publish-service-only:
-	: $${HZN_EXCHANGE_USER_AUTH:?} $${PRIVATE_KEY_FILE:?} $${PUBLIC_KEY_FILE:?}   # this verifies these env vars are set
-	hzn exchange service publish -k $$PRIVATE_KEY_FILE -K $$PUBLIC_KEY_FILE -f horizon/service.definition.json
-
-
-
-# Create/update the deployment pattern for a set of edge nodes
-publish-pattern:
-	: $${HZN_ORG_ID:?} $${HZN_EXCHANGE_USER_AUTH:?}   # this verifies these env vars are set
-	hzn exchange pattern publish -p $$CHATBOT_NAME -f horizon/pattern/chatbot.json
-
 clean:
 	-docker rm -f $(DOCKER_NAME) 2> /dev/null || :
 	-docker rmi $(DOCKER_HUB_ID)/$(DOCKER_NAME):$(CHATBOT_VERSION) 2> /dev/null || :
